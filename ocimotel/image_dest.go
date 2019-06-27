@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/containers/image/pkg/blobinfocache/none"
+	none "github.com/containers/image/pkg/blobinfocache"
 	"github.com/containers/image/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
