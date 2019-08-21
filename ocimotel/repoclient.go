@@ -37,23 +37,30 @@ func NewOciRepo(ref *ociMotelReference, sys *types.SystemContext) (r OciRepo, er
 		port = fmt.Sprintf("%d", ref.port)
 	}
 
-	insecureSkipVerify := (sys.DockerInsecureSkipTLSVerify == types.OptionalBoolTrue)
-	tlsClientConfig := &tls.Config{
-		InsecureSkipVerify: insecureSkipVerify,
-	}
+	var tlsClientConfig *tls.Config
+	insecureSkipVerify := false
+	creds := ""
 
-	if sys.DockerCertPath != "" {
-		if err := tlsclientconfig.SetupCertificates(sys.DockerCertPath, tlsClientConfig); err != nil {
-			return r, err
+	if sys != nil {
+		insecureSkipVerify = (sys.DockerInsecureSkipTLSVerify == types.OptionalBoolTrue)
+		tlsClientConfig = &tls.Config{
+			InsecureSkipVerify: insecureSkipVerify,
+		}
+
+		if sys.DockerCertPath != "" {
+			if err := tlsclientconfig.SetupCertificates(sys.DockerCertPath, tlsClientConfig); err != nil {
+				return r, err
+			}
+		}
+
+		if sys.DockerAuthConfig != nil {
+			a := sys.DockerAuthConfig
+			creds = base64.StdEncoding.EncodeToString([]byte(a.Username + ":" + a.Password))
 		}
 	}
+
 	transport := &http.Transport{TLSClientConfig: tlsClientConfig}
 	client := &http.Client{Transport: transport}
-	creds := ""
-	if sys.DockerAuthConfig != nil {
-		a := sys.DockerAuthConfig
-		creds = base64.StdEncoding.EncodeToString([]byte(a.Username + ":" + a.Password))
-	}
 	r = OciRepo{ref: ref, authCreds: creds, client: client}
 
 	ping := func(scheme string) error {
